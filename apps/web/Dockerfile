@@ -17,7 +17,7 @@ COPY apps/web/package.json ./apps/web/
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 COPY apps/web ./apps/web
-RUN pnpm --filter web build
+RUN pnpm --filter web... build
 
 FROM base AS production
 ENV NODE_ENV=production

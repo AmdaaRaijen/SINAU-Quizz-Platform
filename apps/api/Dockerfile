@@ -17,7 +17,7 @@ COPY apps/api/package.json ./apps/api/
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 COPY apps/api ./apps/api
-RUN pnpm --filter api build
+RUN pnpm --filter api... build
 
 FROM base AS production
 ENV NODE_ENV=production
