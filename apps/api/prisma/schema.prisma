@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== Fase 2: Auth =====
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  questionSets  QuestionSet[]
+  attempts      QuizAttempt[]
+
+  @@map("users")
+}
+
+// ===== Core domain =====
+model QuestionSet {
+  id           String        @id @default(uuid())
+  title        String
+  description  String?
+  ownerId      String?
+  owner        User?         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  isPublic     Boolean       @default(false)
+  shareSlug    String?       @unique   // dipakai untuk fitur share link, Fase 3
+
+  questions    Question[]
+  attempts     QuizAttempt[]
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([ownerId])
+  @@map("question_sets")
+}
+
+model Question {
+  id              String          @id @default(uuid())
+  questionSetId   String
+  questionSet     QuestionSet     @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+
+  orderIndex      Int             // urutan soal dalam set, menjaga urutan asli JSON
+  text            String
+  correctOptionId String?         // diisi setelah options dibuat (lihat catatan di bawah)
+  explanation     String?
+
+  options         QuestionOption[]
+  answers         AttemptAnswer[]
+
+  @@index([questionSetId])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id           String     @id @default(uuid())
+  questionId   String
+  question     Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  optionKey    String     // "a" | "b" | "c" | "d" | "e"
+  text         String
+
+  @@unique([questionId, optionKey])
+  @@map("question_options")
+}
+
+// ===== Fase 2: Riwayat pengerjaan =====
+model QuizAttempt {
+  id              String          @id @default(uuid())
+  questionSetId   String
+  questionSet     QuestionSet     @relation(fields: [questionSetId], references: [id], onDelete: Cascade)
+
+  userId          String?         // nullable: tetap dukung attempt anonim jika diperlukan
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  score           Int             // jumlah benar
+  totalQuestions  Int
+  startedAt       DateTime        @default(now())
+  finishedAt      DateTime?
+
+  answers         AttemptAnswer[]
+
+  @@index([questionSetId])
+  @@index([userId])
+  @@map("quiz_attempts")
+}
+
+model AttemptAnswer {
+  id            String        @id @default(uuid())
+  attemptId     String
+  attempt       QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId    String
+  question      Question      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  selectedKey   String        // "a"-"e", jawaban yang dipilih user
+  isCorrect     Boolean
+
+  @@unique([attemptId, questionId])
+  @@map("attempt_answers")
+}

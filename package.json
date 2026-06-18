@@ -1,0 +1,16 @@
+{
+  "name": "quiz-platform-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.12",
+    "typescript": "^5.5.4"
+  },
+  "packageManager": "pnpm@9.5.0"
+}
