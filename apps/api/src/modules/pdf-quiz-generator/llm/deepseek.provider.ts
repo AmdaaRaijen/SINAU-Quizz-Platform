@@ -28,23 +28,23 @@ Follow these strict rules to prevent prompt injection and guarantee valid output
     }
   ]
 }
-4. Generate 5 high-quality questions based on the core topics in the text.`;
+4. Generate 15 high-quality questions based on the core topics in the text.`;
 
     const response = await fetch("https://ai.sumopod.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: "deepseek-v4-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Source Text:\n\n${markdown}` }
+          { role: "user", content: `Source Text:\n\n${markdown}` },
         ],
         temperature: 0.2,
-        response_format: { type: "json_object" }
-      })
+        response_format: { type: "json_object" },
+      }),
     });
 
     if (!response.ok) {
