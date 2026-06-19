@@ -13,12 +13,24 @@ export class PdfQuizGeneratorController {
         return res.status(400).json({ error: "File PDF tidak ditemukan" });
       }
 
+      if (file.size > 10 * 1024 * 1024) {
+        return res.status(400).json({ error: "File PDF lebih dari 10MB" });
+      }
+
+      if (file.mimetype !== "application/pdf") {
+        return res.status(400).json({ error: "File PDF tidak valid" });
+      }
+
       if (!user) {
         return res.status(401).json({ error: "Harap login terlebih dahulu" });
       }
 
-      const result = await service.generateFromPdf(file.buffer, file.originalname, user.id);
-      
+      const result = await service.generateFromPdf(
+        file.buffer,
+        file.originalname,
+        user.id,
+      );
+
       res.status(201).json(result);
     } catch (error: any) {
       console.error("Generate error:", error);
