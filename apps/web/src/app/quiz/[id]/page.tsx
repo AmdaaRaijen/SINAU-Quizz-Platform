@@ -9,18 +9,22 @@ import { ProgressBar } from "@/features/quiz-runner/components/ProgressBar";
 import { QuestionCard } from "@/features/quiz-runner/components/QuestionCard";
 import type { QuestionSet } from "@quiz-platform/shared-types";
 
-export default function QuizRunnerPage({ params }: { params: Promise<{ id: string }> }) {
+export default function QuizRunnerPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { id } = use(params);
   const source = searchParams.get("source");
   const storage = source === "api" ? apiQuizStorage : localQuizStorage;
-  
+
   const [quiz, setQuiz] = useState<QuestionSet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    storage.get(id).then(data => {
+    storage.get(id).then((data) => {
       if (!data) {
         router.replace("/import");
         return;
@@ -56,7 +60,10 @@ export default function QuizRunnerPage({ params }: { params: Promise<{ id: strin
     <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-slate-800">{quiz.title}</h2>
-        <ProgressBar current={session.currentIndex + 1} total={session.totalQuestions} />
+        <ProgressBar
+          current={session.currentIndex + 1}
+          total={session.totalQuestions}
+        />
       </div>
 
       <QuestionCard
