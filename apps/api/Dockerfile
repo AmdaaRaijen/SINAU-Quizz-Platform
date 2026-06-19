@@ -1,4 +1,5 @@
 FROM node:20-alpine AS base
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -17,6 +18,7 @@ COPY apps/api/package.json ./apps/api/
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 COPY apps/api ./apps/api
+RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api... build
 
 FROM base AS production
@@ -27,5 +29,6 @@ COPY packages ./packages
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY apps/api/prisma ./apps/api/prisma
+RUN npx prisma@5.22.0 generate --schema=apps/api/prisma/schema.prisma
 EXPOSE 4000
 CMD ["node", "apps/api/dist/server.js"]

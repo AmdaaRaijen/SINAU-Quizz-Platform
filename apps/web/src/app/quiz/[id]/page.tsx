@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
-import { quizStorage } from "@/lib/storage/quiz-storage";
+import { useRouter, useSearchParams } from "next/navigation";
+import { quizStorage as localQuizStorage } from "@/lib/storage/quiz-storage";
+import { apiQuizStorage } from "@/lib/storage/api-quiz-adapter";
 import { useQuizSession } from "@/features/quiz-runner/hooks/useQuizSession";
 import { ProgressBar } from "@/features/quiz-runner/components/ProgressBar";
 import { QuestionCard } from "@/features/quiz-runner/components/QuestionCard";
@@ -10,13 +11,16 @@ import type { QuestionSet } from "@quiz-platform/shared-types";
 
 export default function QuizRunnerPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = use(params);
+  const source = searchParams.get("source");
+  const storage = source === "api" ? apiQuizStorage : localQuizStorage;
   
   const [quiz, setQuiz] = useState<QuestionSet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    quizStorage.get(id).then(data => {
+    storage.get(id).then(data => {
       if (!data) {
         router.replace("/import");
         return;
@@ -24,7 +28,7 @@ export default function QuizRunnerPage({ params }: { params: Promise<{ id: strin
       setQuiz(data);
       setIsLoading(false);
     });
-  }, [id, router]);
+  }, [id, router, storage]);
 
   const session = useQuizSession(quiz || { title: "", questions: [] });
 
@@ -32,9 +36,10 @@ export default function QuizRunnerPage({ params }: { params: Promise<{ id: strin
     if (session.isFinished) {
       // Save answers to local storage so result page can read it
       localStorage.setItem(`answers:${id}`, JSON.stringify(session.answers));
-      router.push(`/quiz/${id}/result`);
+      const sourceQuery = source ? `?source=${source}` : "";
+      router.push(`/quiz/${id}/result${sourceQuery}`);
     }
-  }, [session.isFinished, id, router, session.answers]);
+  }, [session.isFinished, id, router, session.answers, source]);
 
   if (isLoading || !quiz) {
     return (
