@@ -25,7 +25,7 @@ FROM base AS production
 ENV NODE_ENV=production
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
-COPY packages ./packages
+COPY --from=build /app/packages ./packages
 RUN pnpm install --frozen-lockfile --prod
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY apps/api/prisma ./apps/api/prisma
