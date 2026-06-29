@@ -9,6 +9,7 @@ import { ScoreSummary } from "@/features/quiz-result/components/ScoreSummary";
 import { ExplanationPanel } from "@/features/quiz-runner/components/ExplanationPanel";
 import type { QuestionSet, OptionKey } from "@quiz-platform/shared-types";
 import type { AnswerRecord } from "@/features/quiz-runner/hooks/useQuizSession";
+import { clearSession } from "@/features/quiz-runner/hooks/useQuizSession";
 import { apiQuizStorage } from "@/lib/storage/api-quiz-adapter";
 
 export default function ResultPage({
@@ -142,7 +143,8 @@ export default function ResultPage({
         <button
           onClick={() => {
             localStorage.removeItem(`answers:${id}`);
-            router.push(`/quiz/${id}`);
+            clearSession(id);
+            router.push(`/quiz/${id}${source ? `?source=${source}` : ""}`);
           }}
           className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-8 py-3 rounded-xl font-semibold shadow-sm transition-transform hover:-translate-y-0.5"
         >

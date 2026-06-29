@@ -4,9 +4,10 @@ import { useEffect, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { quizStorage as localQuizStorage } from "@/lib/storage/quiz-storage";
 import { apiQuizStorage } from "@/lib/storage/api-quiz-adapter";
-import { useQuizSession } from "@/features/quiz-runner/hooks/useQuizSession";
+import { useQuizSession, clearSession } from "@/features/quiz-runner/hooks/useQuizSession";
 import { ProgressBar } from "@/features/quiz-runner/components/ProgressBar";
 import { QuestionCard } from "@/features/quiz-runner/components/QuestionCard";
+import { QuestionNavigator } from "@/features/quiz-runner/components/QuestionNavigator";
 import type { QuestionSet } from "@quiz-platform/shared-types";
 
 export default function QuizRunnerPage({
@@ -34,12 +35,13 @@ export default function QuizRunnerPage({
     });
   }, [id, router, storage]);
 
-  const session = useQuizSession(quiz || { title: "", questions: [] });
+  const session = useQuizSession(quiz || { title: "", questions: [] }, id);
 
   useEffect(() => {
     if (session.isFinished) {
-      // Save answers to local storage so result page can read it
+      // Save final answers so result page can read them, then clear session
       localStorage.setItem(`answers:${id}`, JSON.stringify(session.answers));
+      clearSession(id);
       const sourceQuery = source ? `?source=${source}` : "";
       router.push(`/quiz/${id}/result${sourceQuery}`);
     }
@@ -53,26 +55,54 @@ export default function QuizRunnerPage({
     );
   }
 
-  // Prevent accessing if empty
   if (!session.currentQuestion) return null;
 
+  const questionIds = quiz.questions.map((q) => q.id!);
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="space-y-4">
+    <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
+      <div className="mb-6 space-y-2">
         <h2 className="text-2xl font-bold text-slate-800">{quiz.title}</h2>
         <ProgressBar
-          current={session.currentIndex + 1}
+          answered={session.answers.length}
           total={session.totalQuestions}
         />
       </div>
 
-      <QuestionCard
-        question={session.currentQuestion}
-        answerRecord={session.currentAnswer}
-        onSelectOption={session.submitAnswer}
-        onNext={session.nextQuestion}
-        isLastQuestion={session.currentIndex === session.totalQuestions - 1}
-      />
+      <div className="flex flex-col md:flex-row gap-6 items-start mb-6">
+        {/* Main question area — full width on mobile */}
+        <div className="w-full md:flex-1 md:min-w-0">
+          <QuestionCard
+            question={session.currentQuestion}
+            answerRecord={session.currentAnswer}
+            onSelectOption={session.submitAnswer}
+            onNext={session.nextQuestion}
+            isLastQuestion={session.currentIndex === session.totalQuestions - 1}
+          />
+        </div>
+
+        {/* Navigator panel — desktop sidebar only, mobile handled inside component */}
+        <div className="hidden md:block w-56 flex-shrink-0 sticky top-6">
+          <QuestionNavigator
+            total={session.totalQuestions}
+            currentIndex={session.currentIndex}
+            answers={session.answers}
+            questionIds={questionIds}
+            onNavigate={session.goToQuestion}
+          />
+        </div>
+      </div>
+
+      {/* Mobile navigator (floating button + bottom sheet) */}
+      <div className="md:hidden">
+        <QuestionNavigator
+          total={session.totalQuestions}
+          currentIndex={session.currentIndex}
+          answers={session.answers}
+          questionIds={questionIds}
+          onNavigate={session.goToQuestion}
+        />
+      </div>
     </div>
   );
 }
